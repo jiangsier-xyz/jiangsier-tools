@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # https://blog.csdn.net/qq_34382962/article/details/112209805
-set -euo pipefail
+set -uo pipefail
 
 PROG_NAME=$0
-ACTION=$1
+ACTION=${1:-help}
 
 APP_NAME=tinyproxy
 
@@ -24,6 +24,7 @@ install() {
         sudo apt-get install -y tinyproxy
         sudo sed -i 's/^Allow 127.0.0.1/#Allow 127.0.0.1/g' /etc/tinyproxy/tinyproxy.conf
         sudo sed -i 's/^Allow ::1/#Allow ::1/g' /etc/tinyproxy/tinyproxy.conf
+        sudo sed -i 's/^#BasicAuth user password/#BasicAuth tinyproxy tinyproxy/g' /etc/tinyproxy/tinyproxy.conf
     else
         echo "Already has a tiny. Ignore installing."
     fi
