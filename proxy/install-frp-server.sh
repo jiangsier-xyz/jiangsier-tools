@@ -94,8 +94,8 @@ rm -f frp_${FRP_VERSION}_linux_amd64.tar.gz
 mv frp_${FRP_VERSION}_linux_amd64 frp
 
 # ========== Configure frps ==========
-mkdir -p "${INSTALL_DIR}"
-cat > ${INSTALL_DIR}/frps.yml <<EOF
+sudo mkdir -p "${INSTALL_DIR}"
+sudo cat > ${INSTALL_DIR}/frps.yml <<EOF
 bindPort: ${FRPS_PORT}
 vhostHTTPPort: ${FRPS_VHOST_HTTP_PORT}
 vhostHTTPSPort: ${FRPS_VHOST_HTTPS_PORT}
@@ -118,7 +118,7 @@ transport:
 EOF
 
 # ========== Setup systemd service ==========
-cat > /etc/systemd/system/frps.service <<EOF
+sudo cat > /etc/systemd/system/frps.service <<EOF
 [Unit]
 Description=FRP Server Service
 After=network.target
@@ -132,9 +132,9 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 
-systemctl daemon-reload
-systemctl enable frps
-systemctl restart frps
+sudo systemctl daemon-reload
+sudo systemctl enable frps
+sudo systemctl restart frps
 
 # ========== Configure Nginx for Hosts ==========
 for HOST in "${HOSTS[@]}"; do
@@ -193,7 +193,7 @@ EOF
 ln -sf ${NGINX_AVAILABLE_PATH}/${FRP_DASHBOARD_HOST} ${NGINX_ENABLED_PATH}
 
 # ========== Reload Nginx ==========
-nginx -t && systemctl reload nginx
+nginx -t && sudo systemctl reload nginx
 
 # ========== Final Output ==========
 HOST_URLS=()
