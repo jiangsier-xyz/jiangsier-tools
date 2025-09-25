@@ -101,7 +101,7 @@ pip install --upgrade pip
 mkdir -p ~/.secrets/certbot
 
 if [[ "$PROVIDER" == "aliyun" ]]; then
-  pip install certbot certbot-dns-aliyun
+  pip install -y --break-system-packages --ignore-installed certbot certbot-dns-aliyun
 
   cat > ~/.secrets/certbot/aliyun.ini <<EOF
 dns_aliyun_access_key = ${ALIYUN_ACCESS_KEY_ID}
@@ -118,7 +118,7 @@ EOF
     --server https://acme-v02.api.letsencrypt.org/directory
 
 elif [[ "$PROVIDER" == "azure" ]]; then
-  pip install certbot certbot-dns-azure
+  pip install -y --break-system-packages --ignore-installed azure-mgmt-dns==8.2.0 certbot certbot-dns-azure
 
   cat > ~/.secrets/certbot/azure.ini <<EOF
 dns_azure_sp_client_id = ${AZURE_CLIENT_ID}
