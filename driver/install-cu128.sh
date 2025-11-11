@@ -11,7 +11,7 @@ sudo systemctl stop nvidia-persistenced
 sudo systemctl disable nvidia-persistenced
 
 # reboot
-sudo shutdown -r
+sudo systemctl reboot
 
 # generate an install script
 cat > ./install-cuda.sh <<'EOF'
@@ -36,3 +36,6 @@ EOF
 
 # install the cuda
 sudo bash ./install-cuda.sh
+
+# reboot
+sudo systemctl reboot
