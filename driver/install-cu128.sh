@@ -1,20 +1,5 @@
 #!/usr/bin/env bash
 
-sudo nvidia-installer --uninstall  # interactive
-
-sudo modprobe -r nvidia_uvm
-sudo modprobe -r nvidia
-sudo modprobe -r nvidia_drm
-sudo modprobe -r nvidia_modeset
-
-sudo systemctl stop nvidia-persistenced
-sudo systemctl disable nvidia-persistenced
-
-# reboot
-sudo systemctl reboot
-
-# generate an install script
-cat > ./install-cuda.sh <<'EOF'
 # settings
 DRIVER_VERSION="570.133.20"
 CUDA_VERSION="12.8.1"
@@ -32,10 +17,3 @@ echo $script_download_url
 rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 cd $INSTALL_DIR && wget -t 10 --timeout=10 $script_download_url && bash ${INSTALL_DIR}/${auto_install_script} $DRIVER_VERSION $CUDA_VERSION $CUDNN_VERSION $IS_INSTALL_RDMA $IS_INSTALL_eRDMA
-EOF
-
-# install the cuda
-sudo bash ./install-cuda.sh
-
-# reboot
-sudo systemctl reboot
