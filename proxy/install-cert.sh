@@ -18,12 +18,15 @@ AZURE_TENANT_ID=""
 AZURE_SUBSCRIPTION_ID=""
 AZURE_RESOURCE_GROUP=""
 
+# Cloudflare defaults
+CLOUDFLARE_API_TOKEN=""
+
 # ========= Help Message ==========
 print_help() {
-  echo "Usage: $0 --provider aliyun|azure --domain DOMAIN --email EMAIL [OPTIONS]"
+  echo "Usage: $0 --provider aliyun|azure|cloudflare --domain DOMAIN --email EMAIL [OPTIONS]"
   echo ""
   echo "Required:"
-  echo "  --provider                 DNS provider to use: aliyun or azure"
+  echo "  --provider                 DNS provider to use: aliyun, azure or cloudflare"
   echo "  --domain                   The base domain (e.g., example.com)"
   echo "  --email                    Email for Let's Encrypt registration"
   echo ""
@@ -37,6 +40,9 @@ print_help() {
   echo "  --azure-tenant-id          Azure tenant ID"
   echo "  --azure-subscription-id    Azure subscription ID"
   echo "  --azure-resource-group     Azure DNS zone resource group"
+  echo ""
+  echo "Cloudflare-specific options:"
+  echo "  --cloudflare-api-token     Cloudflare API token with DNS edit permissions"
   echo ""
   echo "General:"
   echo "  -h, --help                 Show this help message and exit"
@@ -58,6 +64,12 @@ print_help() {
   echo "    --azure-subscription-id SUB_ID \\"
   echo "    --azure-resource-group RG_NAME"
   echo ""
+  echo "Example (Cloudflare):"
+  echo "  $0 --provider cloudflare \\"
+  echo "    --domain example.com \\"
+  echo "    --email admin@example.com \\"
+  echo "    --cloudflare-api-token YOUR_API_TOKEN"
+  echo ""
 }
 
 # ========= Parse Arguments ==========
@@ -76,6 +88,8 @@ while [[ $# -gt 0 ]]; do
     --azure-tenant-id) AZURE_TENANT_ID="$2"; shift 2 ;;
     --azure-subscription-id) AZURE_SUBSCRIPTION_ID="$2"; shift 2 ;;
     --azure-resource-group) AZURE_RESOURCE_GROUP="$2"; shift 2 ;;
+
+    --cloudflare-api-token) CLOUDFLARE_API_TOKEN="$2"; shift 2 ;;
 
     *) echo "Unknown option: $1"; echo ""; print_help; exit 1 ;;
   esac
@@ -133,6 +147,22 @@ EOF
     --authenticator dns-azure \
     --dns-azure-credentials ~/.secrets/certbot/azure.ini \
     --dns-azure-propagation-seconds 60 \
+    -d "*.${DOMAIN}" -d "${DOMAIN}" \
+    --agree-tos --non-interactive --email "${EMAIL}" \
+    --server https://acme-v02.api.letsencrypt.org/directory
+
+elif [[ "$PROVIDER" == "cloudflare" ]]; then
+  pip install --break-system-packages --ignore-installed certbot certbot-dns-cloudflare
+
+  cat > ~/.secrets/certbot/cloudflare.ini <<EOF
+dns_cloudflare_api_token = ${CLOUDFLARE_API_TOKEN}
+EOF
+  chmod 600 ~/.secrets/certbot/cloudflare.ini
+
+  certbot certonly \
+    --authenticator dns-cloudflare \
+    --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini \
+    --dns-cloudflare-propagation-seconds 60 \
     -d "*.${DOMAIN}" -d "${DOMAIN}" \
     --agree-tos --non-interactive --email "${EMAIL}" \
     --server https://acme-v02.api.letsencrypt.org/directory
