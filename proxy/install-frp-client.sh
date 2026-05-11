@@ -14,7 +14,13 @@ NAS_LOCAL_PORT=9999
 WEB_DOMAIN="nas.example.com"
 
 # ========== Constants ==========
-FRP_TAR="frp_${FRP_VERSION}_linux_amd64.tar.gz"
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)  ARCH="${ARCH}" ;;
+  aarch64) ARCH="arm64" ;;
+  *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
+esac
+FRP_TAR="frp_${FRP_VERSION}_linux_${ARCH}.tar.gz"
 FRP_URL="https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/${FRP_TAR}"
 FRPC_BIN="${FRP_DIR}/frpc"
 FRPC_CONF="${FRP_DIR}/frpc.yml"
@@ -66,7 +72,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Update derived constants
-FRP_TAR="frp_${FRP_VERSION}_linux_amd64.tar.gz"
+FRP_TAR="frp_${FRP_VERSION}_linux_${ARCH}.tar.gz"
 FRP_URL="https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/${FRP_TAR}"
 FRPC_BIN="${FRP_DIR}/frpc"
 FRPC_CONF="${FRP_DIR}/frpc.yml"
@@ -87,7 +93,7 @@ cd /tmp || exit
 echo "📦 Downloading frpc..."
 curl -LO "$FRP_URL"
 tar -xzf "$FRP_TAR"
-cp "frp_${FRP_VERSION}_linux_amd64/frpc" "$FRPC_BIN"
+cp "frp_${FRP_VERSION}_linux_${ARCH}/frpc" "$FRPC_BIN"
 chmod +x "$FRPC_BIN"
 
 # ========== Write frpc config ==========
