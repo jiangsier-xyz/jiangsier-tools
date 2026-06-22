@@ -2,18 +2,43 @@
 
 set -e
 
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") -u <user> -h <host> [-t <target_dir>] [-i]
+
+Mount a remote directory on macOS via SSHFS.
+
+Options:
+  -u <user>        Remote SSH username (required)
+  -h <host>        Remote SSH host (required)
+  -t <target_dir>  Remote directory to mount (default: /home/<user>)
+  -i               Use the default SSH private key (~/.ssh/id_rsa)
+
+Examples:
+  $(basename "$0") -u alice -h example.com
+  $(basename "$0") -u bob -h 192.168.1.10 -t /data -i
+EOF
+}
+
 user=""
 host=""
 target=""
 id_rsa=""
 
-while getopts "u:h:t:i" opt; do
+while getopts "u:h:t:i?" opt; do
   case "$opt" in
     u) user="$OPTARG" ;;
     h) host="$OPTARG" ;;
     t) target="$OPTARG" ;;
     i) id_rsa="$HOME/.ssh/id_rsa" ;;
-    *) exit 1 ;;
+    \?)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
   esac
 done
 
@@ -22,7 +47,7 @@ if [ -z "$target" ]; then
 fi
 
 [ -n "$user" ] && [ -n "$host" ] || {
-  echo "need -u <user> and -h <hoster>" >&2
+  usage >&2
   exit 1
 }
 
