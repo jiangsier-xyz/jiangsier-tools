@@ -105,6 +105,9 @@ LUAEOF
 
 info "Configured neo-tree to show hidden files by default."
 
+info "Installing necessary tools."
+NONINTERACTIVE=1 brew install fd ripgrep fzf lazygit tree-sitter gdu
+
 # --- First launch: auto-install plugins ---
 info "Launching Neovim to install plugins (this may take a minute)…"
 nvim --headless "+Lazy! sync" +qa
