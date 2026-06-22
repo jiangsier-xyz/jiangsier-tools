@@ -66,8 +66,7 @@ if [ -n "$id_rsa" ]; then
   sshfs \
     "${user}@${host}:$target" \
     "$HOME/mnt/$host" \
-    -i "$id_rsa" \
-    -o reconnect,idmap=user,defer_permissions,ServerAliveInterval=15,ServerAliveCountMax=3
+    -o IdentityFile=$id_rsa,reconnect,idmap=user,defer_permissions,ServerAliveInterval=15,ServerAliveCountMax=3
 else
   sshfs \
     "${user}@${host}:$target" \
