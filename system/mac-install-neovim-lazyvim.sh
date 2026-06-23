@@ -105,6 +105,20 @@ LUAEOF
 
 info "Configured neo-tree to show hidden files by default."
 
+# --- Show hidden files in snacks.nvim picker by default ---
+cat > "${NEOTREE_PLUGIN_DIR}/snacks.lua" << 'LUAEOF'
+return {
+  "folke/snacks.nvim",
+  opts = {
+    picker = {
+      hidden = true,
+    },
+  },
+}
+LUAEOF
+
+info "Configured snacks.nvim picker to include hidden files."
+
 info "Installing necessary tools."
 NONINTERACTIVE=1 brew install fd ripgrep fzf lazygit tree-sitter gdu
 
