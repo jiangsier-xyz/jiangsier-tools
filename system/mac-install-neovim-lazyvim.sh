@@ -85,25 +85,19 @@ rm -rf "${LAZYVIM_DIR}/.git"
 
 info "LazyVim installed at ${LAZYVIM_DIR}"
 
-# --- Show hidden files in neo-tree by default ---
+# --- Disable neo-tree (use snacks explorer instead) ---
+# LazyVim now uses snacks.nvim for file explorer, which is more modern.
+# We disable neo-tree to avoid having two file browsers.
 NEOTREE_PLUGIN_DIR="${LAZYVIM_DIR}/lua/plugins"
 mkdir -p "$NEOTREE_PLUGIN_DIR"
 
-cat > "${NEOTREE_PLUGIN_DIR}/neo-tree.lua" << 'LUAEOF'
+cat > "${NEOTREE_PLUGIN_DIR}/disabled.lua" << 'LUAEOF'
 return {
-  "nvim-neo-tree/neo-tree.nvim",
-  opts = {
-    filesystem = {
-      filtered_items = {
-        hide_dotfiles = false,
-        hide_hidden = false,
-      },
-    },
-  },
+  { "nvim-neo-tree/neo-tree.nvim", enabled = false },
 }
 LUAEOF
 
-info "Configured neo-tree to show hidden files by default."
+info "Disabled neo-tree (using snacks explorer instead)."
 
 # --- Show hidden files in snacks.nvim picker by default ---
 cat > "${NEOTREE_PLUGIN_DIR}/snacks.lua" << 'LUAEOF'
