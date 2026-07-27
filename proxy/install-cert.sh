@@ -45,7 +45,8 @@ print_help() {
   echo "  --cloudflare-api-token     Cloudflare API token with DNS edit permissions"
   echo ""
   echo "General:"
-  echo "  -h, --help                 Show this help message and exit"
+  echo "  --certbot-home            Path to the certbot virtualenv (default: ${CERTBOT_HOME})"
+  echo "  -h, --help                Show this help message and exit"
   echo ""
   echo "Example (Aliyun):"
   echo "  $0 --provider aliyun \\"
@@ -91,6 +92,8 @@ while [[ $# -gt 0 ]]; do
 
     --cloudflare-api-token) CLOUDFLARE_API_TOKEN="$2"; shift 2 ;;
 
+    --certbot-home) CERTBOT_HOME="$2"; shift 2 ;;
+
     *) echo "Unknown option: $1"; echo ""; print_help; exit 1 ;;
   esac
 done
@@ -103,19 +106,33 @@ if [[ -z "$PROVIDER" || -z "$DOMAIN" || -z "$EMAIL" ]]; then
   exit 1
 fi
 
-# ========= Install Certbot and Plugin ==========
-apt update
-apt install -y python3-venv unzip curl
+# ========= Ensure System Dependencies ==========
+# Idempotent: only install if the venv module / helpers are missing.
+command -v python3 >/dev/null 2>&1 || NEED_PY=1
+python3 -c 'import venv' >/dev/null 2>&1 || NEED_VENV=1
+command -v unzip >/dev/null 2>&1 || NEED_UNZIP=1
+command -v curl >/dev/null 2>&1 || NEED_CURL=1
+if [[ "${NEED_PY:-}" || "${NEED_VENV:-}" || "${NEED_UNZIP:-}" || "${NEED_CURL:-}" ]]; then
+  apt update
+  apt install -y python3 python3-venv unzip curl
+fi
 
-python3 -m venv "${CERTBOT_HOME}"
-source "${CERTBOT_HOME}/bin/activate"
-pip install --upgrade pip
+# ========= Create / Reuse the Certbot Virtualenv ==========
+# We deliberately do NOT `source activate` and instead invoke the venv's
+# absolute binaries (pip, certbot). This keeps the script correct regardless
+# of shell activation state and avoids needing `deactivate` on exit paths.
+PIP="${CERTBOT_HOME}/bin/pip"
+CERTBOT="${CERTBOT_HOME}/bin/certbot"
+if [[ ! -x "${CERTBOT}" ]]; then
+  python3 -m venv "${CERTBOT_HOME}"
+  "${CERTBOT_HOME}/bin/python" -m pip install --upgrade pip
+fi
 
 # ========= Handle Provider Logic ==========
 mkdir -p ~/.secrets/certbot
 
 if [[ "$PROVIDER" == "aliyun" ]]; then
-  pip install --break-system-packages --ignore-installed certbot certbot-dns-aliyun
+  "${PIP}" install --upgrade certbot certbot-dns-aliyun
 
   cat > ~/.secrets/certbot/aliyun.ini <<EOF
 dns_aliyun_access_key = ${ALIYUN_ACCESS_KEY_ID}
@@ -123,7 +140,7 @@ dns_aliyun_access_key_secret = ${ALIYUN_ACCESS_KEY_SECRET}
 EOF
   chmod 600 ~/.secrets/certbot/aliyun.ini
 
-  certbot certonly \
+  "${CERTBOT}" certonly \
     --authenticator dns-aliyun \
     --dns-aliyun-credentials ~/.secrets/certbot/aliyun.ini \
     --dns-aliyun-propagation-seconds 60 \
@@ -132,7 +149,7 @@ EOF
     --server https://acme-v02.api.letsencrypt.org/directory
 
 elif [[ "$PROVIDER" == "azure" ]]; then
-  pip install --break-system-packages --ignore-installed azure-mgmt-dns==8.2.0 certbot certbot-dns-azure
+  "${PIP}" install --upgrade 'cryptography<43' azure-mgmt-dns==8.2.0 certbot certbot-dns-azure
 
   cat > ~/.secrets/certbot/azure.ini <<EOF
 dns_azure_sp_client_id = ${AZURE_CLIENT_ID}
@@ -143,7 +160,7 @@ dns_azure_zone1 = ${DOMAIN}:/subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGrou
 EOF
   chmod 600 ~/.secrets/certbot/azure.ini
 
-  certbot certonly \
+  "${CERTBOT}" certonly \
     --authenticator dns-azure \
     --dns-azure-credentials ~/.secrets/certbot/azure.ini \
     --dns-azure-propagation-seconds 60 \
@@ -152,14 +169,14 @@ EOF
     --server https://acme-v02.api.letsencrypt.org/directory
 
 elif [[ "$PROVIDER" == "cloudflare" ]]; then
-  pip install --break-system-packages --ignore-installed certbot certbot-dns-cloudflare
+  "${PIP}" install --upgrade certbot certbot-dns-cloudflare
 
   cat > ~/.secrets/certbot/cloudflare.ini <<EOF
 dns_cloudflare_api_token = ${CLOUDFLARE_API_TOKEN}
 EOF
   chmod 600 ~/.secrets/certbot/cloudflare.ini
 
-  certbot certonly \
+  "${CERTBOT}" certonly \
     --authenticator dns-cloudflare \
     --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini \
     --dns-cloudflare-propagation-seconds 60 \
@@ -169,7 +186,6 @@ EOF
 
 else
   echo "❌ Unsupported provider: $PROVIDER"
-  deactivate
   exit 1
 fi
 
@@ -181,5 +197,3 @@ if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
 else
   echo "❌ Certificate request failed for ${DOMAIN}. Please check the logs."
 fi
-
-deactivate
